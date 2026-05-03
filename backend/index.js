@@ -11,12 +11,18 @@ app.use(express.json());
    MONGO DB CONNECT
 ========================= */
 
-mongoose.connect(process.env.MONGO_URL)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.log("MongoDB error:", err));
+const mongoURI = process.env.MONGO_URL;
+
+if (!mongoURI) {
+  console.log("❌ MONGO_URL is missing");
+} else {
+  mongoose.connect(mongoURI)
+    .then(() => console.log("MongoDB connected"))
+    .catch((err) => console.log("MongoDB error:", err));
+}
 
 /* =========================
-   TEMP DATABASE (for now)
+   TEMP DATABASE
 ========================= */
 
 let tasks = [];
@@ -37,12 +43,10 @@ app.get("/", (req, res) => {
    TASKS API
 ========================= */
 
-// 📥 Get all tasks
 app.get("/tasks", (req, res) => {
   res.json(tasks);
 });
 
-// ➕ Add task
 app.post("/tasks", (req, res) => {
   const task = {
     id: Date.now(),
@@ -53,7 +57,6 @@ app.post("/tasks", (req, res) => {
   res.json(task);
 });
 
-// ❌ Delete task
 app.delete("/tasks/:id", (req, res) => {
   tasks = tasks.filter(t => t.id != req.params.id);
   res.json({ ok: true });
@@ -63,13 +66,11 @@ app.delete("/tasks/:id", (req, res) => {
    FOCUS API
 ========================= */
 
-// ➕ Increase focus session
 app.post("/focus", (req, res) => {
   focusSessions++;
   res.json({ focusSessions });
 });
 
-// 📊 Get focus sessions
 app.get("/focus", (req, res) => {
   res.json({ focusSessions });
 });
