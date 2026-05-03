@@ -6,13 +6,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// 🧠 in-memory database
+/* =========================
+   TEMP DATABASE
+========================= */
+
 let tasks = [];
 let focusSessions = 0;
 
 /* =========================
    HOME ROUTE
 ========================= */
+
 app.get("/", (req, res) => {
   res.json({
     message: "🔥 BeFocus API is running",
@@ -37,35 +41,45 @@ app.post("/tasks", (req, res) => {
   };
 
   tasks.push(task);
+
   res.json(task);
 });
 
 // ❌ Delete task
 app.delete("/tasks/:id", (req, res) => {
-  tasks = tasks.filter(t => t.id != req.params.id);
-  res.json({ ok: true });
+  tasks = tasks.filter(task => task.id != req.params.id);
+
+  res.json({
+    ok: true
+  });
 });
 
 /* =========================
-   FOCUS SESSIONS (POMODORO)
+   FOCUS API
 ========================= */
 
-// ➕ increase focus session
+// ➕ Add focus session
 app.post("/focus", (req, res) => {
   focusSessions++;
-  res.json({ focusSessions });
+
+  res.json({
+    focusSessions
+  });
 });
 
-// 📊 get focus sessions
+// 📊 Get focus sessions
 app.get("/focus", (req, res) => {
-  res.json({ focusSessions });
+  res.json({
+    focusSessions
+  });
 });
 
 /* =========================
    START SERVER
 ========================= */
-const PORT = 3002;
+
+const PORT = process.env.PORT || 3002;
 
 app.listen(PORT, () => {
-  console.log(`🚀 BeFocus API running on http://localhost:${PORT}`);
+  console.log(`🚀 BeFocus API running on port ${PORT}`);
 });
