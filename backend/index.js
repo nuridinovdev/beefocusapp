@@ -3,6 +3,11 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+
+const Task = require("./models/Task");
+const User = require("./models/User");
 
 const app = express();
 
@@ -10,92 +15,108 @@ app.use(cors());
 app.use(express.json());
 
 /* =========================
-   DEBUG (optional but useful)
+   DEBUG
 ========================= */
 console.log("🔍 MONGO_URL:", process.env.MONGO_URL);
 
 /* =========================
    MONGO DB CONNECT
 ========================= */
-
-const mongoURI = process.env.MONGO_URL;
-
-if (!mongoURI) {
-  console.log("❌ MONGO_URL is missing");
-} else {
-  mongoose
-    .connect(mongoURI)
-    .then(() => console.log("🟢 MongoDB connected"))
-    .catch((err) => console.log("❌ MongoDB error:", err));
-}
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => console.log("🟢 MongoDB connected"))
+  .catch((err) => console.log("❌ MongoDB error:", err));
 
 /* =========================
-   TEMP DATABASE (RAM)
+   HOME
 ========================= */
-
-let tasks = [];
-let focusSessions = 0;
-
-/* =========================
-   HOME ROUTE
-========================= */
-
 app.get("/", (req, res) => {
   res.json({
     message: "🔥 BeFocus API is running",
-    routes: ["/tasks", "/focus"],
+    routes: ["/register", "/login", "/tasks"],
   });
 });
 
 /* =========================
-   TASKS API
+   AUTH ROUTES
 ========================= */
 
-// GET tasks
-app.get("/tasks", (req, res) => {
+// REGISTER
+app.post("/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    const hashed = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashed,
+    });
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// LOGIN
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ error: "User not found" });
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ error: "Wrong password" });
+
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET
+    );
+
+    res.json({ token, user });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+/* =========================
+   TASKS (REAL DB)
+========================= */
+
+// GET ALL TASKS
+app.get("/tasks", async (req, res) => {
+  const tasks = await Task.find();
   res.json(tasks);
 });
 
-// CREATE task
-app.post("/tasks", (req, res) => {
-  if (!req.body.text) {
-    return res.status(400).json({ error: "text is required" });
+// CREATE TASK
+app.post("/tasks", async (req, res) => {
+  try {
+    const { text, userId } = req.body;
+
+    const task = await Task.create({
+      text,
+      userId,
+    });
+
+    res.json(task);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
-
-  const task = {
-    id: Date.now(),
-    text: req.body.text,
-  };
-
-  tasks.push(task);
-  res.json(task);
 });
 
-// DELETE task
-app.delete("/tasks/:id", (req, res) => {
-  tasks = tasks.filter((t) => t.id != req.params.id);
+// DELETE TASK
+app.delete("/tasks/:id", async (req, res) => {
+  await Task.findByIdAndDelete(req.params.id);
   res.json({ ok: true });
 });
 
 /* =========================
-   FOCUS API
+   SERVER
 ========================= */
-
-// increase focus session
-app.post("/focus", (req, res) => {
-  focusSessions++;
-  res.json({ focusSessions });
-});
-
-// get focus sessions
-app.get("/focus", (req, res) => {
-  res.json({ focusSessions });
-});
-
-/* =========================
-   START SERVER
-========================= */
-
 const PORT = process.env.PORT || 3002;
 
 app.listen(PORT, () => {
