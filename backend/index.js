@@ -1,3 +1,5 @@
+require("dotenv").config(); // 👈 THIS MUST BE FIRST
+
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
@@ -17,8 +19,8 @@ if (!mongoURI) {
   console.log("❌ MONGO_URL is missing");
 } else {
   mongoose.connect(mongoURI)
-    .then(() => console.log("MongoDB connected"))
-    .catch((err) => console.log("MongoDB error:", err));
+    .then(() => console.log("🟢 MongoDB connected"))
+    .catch((err) => console.log("❌ MongoDB error:", err));
 }
 
 /* =========================
