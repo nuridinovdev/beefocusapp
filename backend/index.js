@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 
 const app = express();
 
@@ -7,7 +8,15 @@ app.use(cors());
 app.use(express.json());
 
 /* =========================
-   TEMP DATABASE
+   MONGO DB CONNECT
+========================= */
+
+mongoose.connect(process.env.MONGO_URL)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.log("MongoDB error:", err));
+
+/* =========================
+   TEMP DATABASE (for now)
 ========================= */
 
 let tasks = [];
@@ -41,37 +50,28 @@ app.post("/tasks", (req, res) => {
   };
 
   tasks.push(task);
-
   res.json(task);
 });
 
 // ❌ Delete task
 app.delete("/tasks/:id", (req, res) => {
-  tasks = tasks.filter(task => task.id != req.params.id);
-
-  res.json({
-    ok: true
-  });
+  tasks = tasks.filter(t => t.id != req.params.id);
+  res.json({ ok: true });
 });
 
 /* =========================
    FOCUS API
 ========================= */
 
-// ➕ Add focus session
+// ➕ Increase focus session
 app.post("/focus", (req, res) => {
   focusSessions++;
-
-  res.json({
-    focusSessions
-  });
+  res.json({ focusSessions });
 });
 
 // 📊 Get focus sessions
 app.get("/focus", (req, res) => {
-  res.json({
-    focusSessions
-  });
+  res.json({ focusSessions });
 });
 
 /* =========================
