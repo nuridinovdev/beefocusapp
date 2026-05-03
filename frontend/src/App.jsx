@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
-const API = "http://localhost:3002";
+const API = "https://beefocusapp.onrender.com";
 
 export default function App() {
   const WORK = 25 * 60;
